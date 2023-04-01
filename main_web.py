@@ -7,12 +7,16 @@ from data.sky_map import get_astronet_sky_map
 from forms.sky_params import SkyForm
 import logging
 
+# Настраиваем логгирование
 logging.basicConfig(filename='sky.log', format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
+# создаем приложение
 app = Flask(__name__)
+# защита от межсайтовой подделки запросов https://ru.wikipedia.org/wiki/Межсайтовая_подделка_запроса
 app.config['SECRET_KEY'] = '9CAlTN8jKiQg'
 
 
+# обработчик обращения к страницам "http://<сайт>/" и "http://<сайт>/index"
 @app.route('/')
 @app.route('/index')
 def index():
@@ -25,6 +29,7 @@ def index():
         'month': dt.month,
         'year': dt.year,
 
+        # Элиста
         'longitude': -46.307743,
         'latitude': 44.269759,
         'azimuth': 180,
@@ -48,6 +53,7 @@ def index():
     return render_template('index.html', title='Звездная карта')
 
 
+# обработчик формы установки параметров карты
 @app.route('/sky_params',  methods=['GET', 'POST'])
 # @login_required
 def add_news():
@@ -95,6 +101,7 @@ def add_news():
                            form=form)
 
 
+# запуск приложения app "слушаем" на всех адресах и на порту 5000 (наружу настроен проброс с порта 54321)
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)

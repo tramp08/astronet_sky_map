@@ -3,6 +3,7 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField, Float
 from wtforms.validators import DataRequired
 
 
+# класс формы для задания параметров карты
 class SkyForm(FlaskForm):
 
     xs = SelectField('размер картинки', choices=[(512, '512'),
