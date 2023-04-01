@@ -17,7 +17,7 @@ query_params = {
 
     'longitude': -46.307743,
     'latitude': 44.269759,
-    'azimuth': 180,
+    'azimuth': 90,
 
     'height': 0,
     'm': 5.0,  # звездные величины

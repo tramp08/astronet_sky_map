@@ -1,9 +1,12 @@
 import os
 import datetime
-from flask import Flask, render_template
+from pprint import pprint
+from flask import Flask, render_template, redirect
 from data.sky_map import get_astronet_sky_map
+from forms.sky_params import SkyForm
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = '9CAlTN8jKiQg'
 
 
 @app.route('/')
@@ -29,7 +32,7 @@ def index():
         'dfig': 1,  # фигуры созвездий
         'colstars': 1,  # отображение спектральных классов
         'names': 1,
-        'xs': 1600,  # размер картинки
+        'xs': 800,  # размер картинки
         'theme': 0,
         'dpl': 1,  # планеты
         'drawmw': 1,
@@ -39,6 +42,53 @@ def index():
     with open("static/img/skyc.gif", "wb") as sky:
         sky.write(get_astronet_sky_map(query_params))
     return render_template('index.html', title='Звездная карта')
+
+
+@app.route('/sky_params',  methods=['GET', 'POST'])
+# @login_required
+def add_news():
+    form = SkyForm()
+    if form.validate_on_submit():
+        print(form)
+
+        dt = datetime.datetime.utcnow()
+        t = dt.time()
+        ut = t.hour + t.minute / 60 + t.second / 3600
+
+        params = {}
+
+        # текущее время
+        params['ut'] = f"{ut:0.5}"
+        params['day'] = dt.day
+        params['month'] = dt.month
+        params['year'] = dt.year
+
+        # Элиста
+        params['longitude'] = form.longitude.data
+        params['latitude'] = form.latitude.data
+
+        params['azimuth'] = form.azimuth.data
+        params['height'] = 0
+        params['m'] = 5.0
+        params['dgrids'] = int(form.dgrids.data)
+        params['dcbnd'] = int(form.dcbnd.data)
+        params['dfig'] = int(form.dfig.data)
+        params['colstars'] = int(form.colstars.data)
+        params['names'] = int(form.names.data)
+        params['xs'] = form.xs.data
+        params['theme'] = int(form.theme.data)
+        params['dpl'] = int(form.dpl.data)
+        params['drawmw'] = int(form.drawmw.data)
+        params['pdf'] = 0
+        params['lang'] = 1
+        pprint(params)
+
+        with open("static/img/skyc.gif", "wb") as sky:
+            sky.write(get_astronet_sky_map(params))
+
+        return render_template('index.html', title='Звездная карта')
+    return render_template('sky_params.html', title='Параметры карты',
+                           form=form)
 
 
 if __name__ == '__main__':
