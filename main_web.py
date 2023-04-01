@@ -5,6 +5,9 @@ from pprint import pprint
 from flask import Flask, render_template, redirect
 from data.sky_map import get_astronet_sky_map
 from forms.sky_params import SkyForm
+import logging
+
+logging.basicConfig(filename='sky.log', format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '9CAlTN8jKiQg'
