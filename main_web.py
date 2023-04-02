@@ -25,18 +25,25 @@ geo_reader = geolite2.reader()
 def index():
     latitude = session.get('latitude', 0)
     longitude = session.get('longitude', 0)
+    azimuth = session.get('azimuth', 0)
+    session['azimuth'] = azimuth
+    # latitude = 0
+    # longitude = 0
+
     ip_addr = request.remote_addr
     # ip_addr = '83.239.242.3'
+
     if latitude == 0 or longitude == 0:
+        print('by ip')
         ip_location = geo_reader.get(ip_addr)
         latitude = ip_location['location']['latitude']
         longitude = ip_location['location']['longitude']
-        session['latitude'] = latitude
-        session['longitude'] = longitude
+        session['latitude'] = longitude
+        session['longitude'] = -latitude
         session['azimuth'] = 180
 
-    location = (latitude, longitude)
-
+    location = (session['latitude'], session['longitude'], session['azimuth'])
+    # print(location)
     dt = datetime.datetime.utcnow()
     t = dt.time()
     ut = t.hour + t.minute / 60 + t.second / 3600
@@ -49,8 +56,8 @@ def index():
         # Элиста
         # 'longitude': -46.307743,
         # 'latitude': 44.269759,
-        'longitude': -latitude,
-        'latitude': longitude,
+        'longitude': session['longitude'],
+        'latitude': session['latitude'],
         'azimuth': session.get('azimuth', 180),
 
         'height': 0,
@@ -60,7 +67,7 @@ def index():
         'dfig': 1,  # фигуры созвездий
         'colstars': 1,  # отображение спектральных классов
         'names': 1,
-        'xs': 800,  # размер картинки
+        'xs': 1024,  # размер картинки
         'theme': 0,
         'dpl': 1,  # планеты
         'drawmw': 1,
@@ -118,9 +125,10 @@ def add_news():
         with open("static/img/skyc.gif", "wb") as sky:
             sky.write(get_astronet_sky_map(params))
 
-        location = (session['latitude'], session['longitude'])
+        location = (session['latitude'], session['longitude'], session['azimuth'])
         return render_template('index.html', title='Звездная карта', ip=request.remote_addr, location=location)
-    location = (session['latitude'], session['longitude'])
+    location = (session['latitude'], session['longitude'], session['azimuth'])
+    # print(f'sky_params {location}')
     return render_template('sky_params.html', title='Параметры карты', ip=request.remote_addr, location=location,
                            form=form)
 
