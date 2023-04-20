@@ -23,24 +23,31 @@ geo_reader = geolite2.reader()
 @app.route('/')
 @app.route('/index')
 def index():
-    latitude = session.get('latitude', 0)
-    longitude = session.get('longitude', 0)
-    azimuth = session.get('azimuth', 0)
-    session['azimuth'] = azimuth
-    # latitude = 0
-    # longitude = 0
 
-    ip_addr = request.remote_addr
+    if session:
+        latitude = session.get('latitude', 0)
+        longitude = session.get('longitude', 0)
+        azimuth = session.get('azimuth', 0)
+        session['azimuth'] = azimuth
+
+    ip_addr = session.get('ip_addr', request.remote_addr)
+    session['ip_addr'] = ip_addr
     # ip_addr = '83.239.242.3'
 
     if latitude == 0 or longitude == 0:
-        print('by ip')
         ip_location = geo_reader.get(ip_addr)
-        latitude = ip_location['location']['latitude']
-        longitude = ip_location['location']['longitude']
+        if ip_location:
+            latitude = ip_location['location']['latitude']
+            longitude = ip_location['location']['longitude']
+            print(f'by ip latitude = {latitude} longitude = {longitude}')
+        else:
+            latitude = 46.307743
+            longitude = 44.269759
+            print(f'by default(Элиста) latitude = {latitude} longitude = {longitude}')
+
         session['latitude'] = longitude
         session['longitude'] = -latitude
-        session['azimuth'] = 180
+        session['azimuth'] = 0
 
     location = (session['latitude'], session['longitude'], session['azimuth'])
     # print(location)
@@ -67,7 +74,7 @@ def index():
         'dfig': 1,  # фигуры созвездий
         'colstars': 1,  # отображение спектральных классов
         'names': 1,
-        'xs': 1024,  # размер картинки
+        'xs': session.get('xs', 1024),  # размер картинки
         'theme': 0,
         'dpl': 1,  # планеты
         'drawmw': 1,
@@ -84,8 +91,15 @@ def index():
 # @login_required
 def add_news():
     form = SkyForm()
+
     if form.validate_on_submit():
 
+        session['latitude'] = form.latitude.data
+        session['longitude'] = form.longitude.data
+        session['azimuth'] = form.azimuth.data
+        session['xs'] = form.xs.data
+
+        # pprint(session)
 
         dt = datetime.datetime.utcnow()
         t = dt.time()
@@ -127,6 +141,13 @@ def add_news():
 
         location = (session['latitude'], session['longitude'], session['azimuth'])
         return render_template('index.html', title='Звездная карта', ip=request.remote_addr, location=location)
+    else:
+        if session:
+            form.latitude.data = session.get('latitude', 44.269759)
+            form.longitude.data = session.get('longitude', -46.307743)
+            form.azimuth.data = session.get('azimuth', '0')
+            form.xs.data = session.get('xs', '1024')
+
     location = (session['latitude'], session['longitude'], session['azimuth'])
     # print(f'sky_params {location}')
     return render_template('sky_params.html', title='Параметры карты', ip=request.remote_addr, location=location,
