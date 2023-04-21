@@ -16,6 +16,7 @@ class SkyForm(FlaskForm):
                                                  (1600, '1600')
                                                  ], default=1024)
     theme = IntegerField('тема', default=0)
+    m = FloatField('Звездные величины', default=5.0)
     longitude = FloatField('долгота', default=-46.307743)
     latitude = FloatField('широта', default=44.269759)
     # longitude = FloatField('долгота', default=-session['latitude'])
@@ -25,7 +26,7 @@ class SkyForm(FlaskForm):
     dcbnd = BooleanField('границы созвездий', default=False)
     dfig = BooleanField('фигуры созвездий', default=True)
     colstars = BooleanField('отображение спектральных классов', default=True)
-    names = BooleanField('наименования', default=True)
+    names = BooleanField('наименования созвездий', default=True)
     dpl = BooleanField('планеты', default=True)
     drawmw = BooleanField('туманности?', default=True)
 

@@ -4,7 +4,8 @@ import datetime
 from geolite2 import geolite2
 from pprint import pprint
 from flask import Flask, render_template, redirect, request, session
-from data.sky_map import get_astronet_sky_map
+from data.sky_map import get_astronet_sky_map  # получение карты звездного неба с сайта www.astronet.ru
+from data.yandex_map_api import get_location_map  # получение карты местоположения наблюдателя
 from forms.sky_params import SkyForm
 import logging
 
@@ -23,18 +24,8 @@ geo_reader = geolite2.reader()
 @app.route('/')
 @app.route('/index')
 def index():
-
-    if session:
-        latitude = session.get('latitude', 0)
-        longitude = session.get('longitude', 0)
-        azimuth = session.get('azimuth', 0)
-        session['azimuth'] = azimuth
-
-    ip_addr = session.get('ip_addr', request.remote_addr)
-    session['ip_addr'] = ip_addr
-    # ip_addr = '83.239.242.3'
-
-    if latitude == 0 or longitude == 0:
+    ip_addr = request.remote_addr
+    if not session:
         ip_location = geo_reader.get(ip_addr)
         if ip_location:
             latitude = ip_location['location']['latitude']
@@ -45,11 +36,22 @@ def index():
             longitude = 44.269759
             print(f'by default(Элиста) latitude = {latitude} longitude = {longitude}')
 
+        session['m'] = 5.0
         session['latitude'] = longitude
         session['longitude'] = -latitude
         session['azimuth'] = 0
+        session['xs'] = '1024'
+        session['dgrids'] = 1
+        session['dcbnd'] = 0
+        session['dfig'] = 1
+        session['colstars'] = 1
+        session['names'] = 1
+        session['dpl'] = 1
+        session['drawmw'] = 1
 
+    # print(session)
     location = (session['latitude'], session['longitude'], session['azimuth'])
+    # print(get_location_map(location))
     # print(location)
     dt = datetime.datetime.utcnow()
     t = dt.time()
@@ -68,28 +70,28 @@ def index():
         'azimuth': session.get('azimuth', 180),
 
         'height': 0,
-        'm': 5.0,  # звездные величины
-        'dgrids': 1,
-        'dcbnd': 0,  # границы созвездий
-        'dfig': 1,  # фигуры созвездий
-        'colstars': 1,  # отображение спектральных классов
-        'names': 1,
+        'm': session['m'],  # звездные величины
+        'dgrids': session['dgrids'],
+        'dcbnd': session['dcbnd'],  # границы созвездий
+        'dfig': session['dfig'],  # фигуры созвездий
+        'colstars': session['colstars'],  # отображение спектральных классов
+        'names': session['names'],
         'xs': session.get('xs', 1024),  # размер картинки
         'theme': 0,
-        'dpl': 1,  # планеты
-        'drawmw': 1,
+        'dpl': session['dpl'],  # планеты
+        'drawmw': session['drawmw'],
         'pdf': 0,
         'lang': 1  # язык
     }
     with open("static/img/skyc.gif", "wb") as sky:
         sky.write(get_astronet_sky_map(query_params))
-    return render_template('index.html', title='Звездная карта', ip=ip_addr, location=location)
+    return render_template('index.html', title='Звездная карта', ip=ip_addr, location=location, map=get_location_map(location))
 
 
 # обработчик формы установки параметров карты
 @app.route('/sky_params',  methods=['GET', 'POST'])
 # @login_required
-def add_news():
+def sky_params():
     form = SkyForm()
 
     if form.validate_on_submit():
@@ -98,6 +100,15 @@ def add_news():
         session['longitude'] = form.longitude.data
         session['azimuth'] = form.azimuth.data
         session['xs'] = form.xs.data
+        session['m'] = form.m.data
+
+        session['dgrids'] = int(form.dgrids.data)
+        session['colstars'] = int(form.colstars.data)
+        session['dcbnd'] = int(form.dcbnd.data)
+        session['dfig'] = int(form.dfig.data)
+        session['dpl'] = int(form.dpl.data)
+        session['names'] = int(form.names.data)
+        session['drawmw'] = int(form.drawmw.data)
 
         # pprint(session)
 
@@ -122,7 +133,8 @@ def add_news():
         params['azimuth'] = form.azimuth.data
         session['azimuth'] = params['azimuth']
         params['height'] = 0
-        params['m'] = 5.0
+        # params['m'] = 5.0
+        params['m'] = form.m.data
         params['dgrids'] = int(form.dgrids.data)
         params['dcbnd'] = int(form.dcbnd.data)
         params['dfig'] = int(form.dfig.data)
@@ -140,13 +152,21 @@ def add_news():
             sky.write(get_astronet_sky_map(params))
 
         location = (session['latitude'], session['longitude'], session['azimuth'])
-        return render_template('index.html', title='Звездная карта', ip=request.remote_addr, location=location)
+        return render_template('index.html', title='Звездная карта', ip=request.remote_addr, location=location, map=get_location_map(location))
     else:
         if session:
             form.latitude.data = session.get('latitude', 44.269759)
             form.longitude.data = session.get('longitude', -46.307743)
             form.azimuth.data = session.get('azimuth', '0')
             form.xs.data = session.get('xs', '1024')
+            form.dgrids.data = session['dgrids']
+            form.colstars.data = session['colstars']
+            form.dcbnd.data = session['dcbnd']
+            form.dfig.data = session['dfig']
+            form.dpl.data = session['dpl']
+            form.names.data = session['names']
+            form.drawmw.data = session['drawmw']
+            form.m.data = session['m']
 
     location = (session['latitude'], session['longitude'], session['azimuth'])
     # print(f'sky_params {location}')
